@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PaperAirplaneIcon, PaperClipIcon } from '@heroicons/react/24/outline';
-import { collection, addDoc, serverTimestamp, updateDoc, doc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, updateDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, auth, storage } from '../firebase';
 
@@ -26,79 +26,99 @@ const Input = ({ selectedChat }) => {
     if (!message.trim() && !file) return;
 
     try {
-        const user = auth.currentUser;
-        if (!user || !selectedChat) return;
+      const user = auth.currentUser;
+      if (!user || !selectedChat) return;
 
-        const chatId = [selectedChat.uid, user.uid].sort().join('_');
-        const messagesRef = collection(db, 'chats', chatId, 'messages');
-        let fileUrl = null;
-        let fileName = null;
+      // Generate chatId by sorting UIDs
+      const chatId = [selectedChat.uid, user.uid].sort().join('_');
+      const chatRef = doc(db, 'chats', chatId); // Reference to the chat document
+      const messagesRef = collection(db, 'chats', chatId, 'messages');
+      let fileUrl = null;
+      let fileName = null;
 
-        if (file) {
-            const fileRef = ref(storage, `files/${selectedChat.uid}/${Date.now()}_${file.name}`);
-            await uploadBytes(fileRef, file);
-            fileUrl = await getDownloadURL(fileRef);
-            fileName = file.name;
+      // Check if the chat document exists, create if it doesn't
+      const chatSnapshot = await getDoc(chatRef);
+      if (!chatSnapshot.exists()) {
+        await setDoc(chatRef, { lastMessage: null, streak: 0, lastInteraction: null }); // Create chat doc
+      }
+
+      if (file) {
+        const fileRef = ref(storage, `files/${selectedChat.uid}/${Date.now()}_${file.name}`);
+        await uploadBytes(fileRef, file);
+        fileUrl = await getDownloadURL(fileRef);
+        fileName = file.name;
+      }
+
+      const content = fileUrl && fileType === 'image'
+        ? caption || ''
+        : message || fileName;
+
+      // Create a new message
+      const messageDoc = await addDoc(messagesRef, {
+        content,
+        from: user.displayName || 'Anonymous',
+        time: serverTimestamp(),
+        profilePic: user.photoURL,
+        fileUrl: fileUrl || null,
+        fileType: fileType || null,
+        fileName: fileName || null,
+      });
+
+      // Update the message with its own ID
+      await updateDoc(doc(db, 'chats', chatId, 'messages', messageDoc.id), {
+        id: messageDoc.id,
+      });
+
+      // Update lastMessage in the chat document
+      await updateDoc(chatRef, {
+        lastMessage: {
+          text: content,
+          from: user.displayName || 'Anonymous',
+          timestamp: serverTimestamp(),
         }
+      });
 
-        const content = fileUrl && fileType === 'image'
-            ? caption || ''
-            : message || fileName;
+      // Streak Logic
+      const currentTime = new Date();
+      const chatData = chatSnapshot.data();
+      const lastInteraction = chatData?.lastInteraction ? new Date(chatData.lastInteraction) : null;
 
-        // Create a new message and get its ID
-        const messageDoc = await addDoc(messagesRef, {
-            content,
-            from: user.displayName || 'Anonymous',
-            time: serverTimestamp(),
-            profilePic: user.photoURL,
-            fileUrl: fileUrl || null,
-            fileType: fileType || null,
-            fileName: fileName || null,
+      // If there's no last interaction, start the streak
+      if (!lastInteraction) {
+        await updateDoc(chatRef, {
+          streak: 1,
+          lastInteraction: currentTime.toISOString(),
         });
+      } else {
+        // Calculate the time difference in hours
+        const timeDiffInHours = (currentTime - lastInteraction) / (1000 * 60 * 60);
 
-        // Update the message with its own ID
-        await updateDoc(doc(db, 'chats', chatId, 'messages', messageDoc.id), {
-            id: messageDoc.id,
-        });
-
-        // Update streak logic
-        const chatDocRef = doc(db, 'users', selectedChat.uid); // Adjust to your structure
-        const currentTime = new Date();
-
-        const chatSnapshot = await getDoc(chatDocRef);
-        if (chatSnapshot.exists()) {
-            const chatData = chatSnapshot.data();
-            const lastInteraction = chatData.lastInteraction ? new Date(chatData.lastInteraction) : null;
-
-            // Calculate the difference
-            const diff = lastInteraction ? (currentTime - lastInteraction) / (1000 * 60 * 60) : null;
-
-            if (lastInteraction && diff < 24) {
-                // Increment streak
-                await updateDoc(chatDocRef, {
-                    streakCount: (chatData.streakCount || 0) + 1,
-                    lastInteraction: currentTime.toISOString(),
-                });
-            } else {
-                // Reset or start a new streak
-                await updateDoc(chatDocRef, {
-                    streakCount: 1,
-                    lastInteraction: currentTime.toISOString(),
-                });
-            }
+        if (timeDiffInHours < 24) {
+          // Both users interacted within 24 hours, increment streak
+          await updateDoc(chatRef, {
+            streak: chatData.streak + 1,
+            lastInteraction: currentTime.toISOString(),
+          });
+        } else {
+          // Missed interaction, reset streak
+          await updateDoc(chatRef, {
+            streak: 0,
+            lastInteraction: currentTime.toISOString(),
+          });
         }
+      }
 
-        // Reset state
-        setMessage('');
-        setFile(null);
-        setFileType('');
-        setCaption('');
-        setShowPreview(false);
+      // Reset state
+      setMessage('');
+      setFile(null);
+      setFileType('');
+      setCaption('');
+      setShowPreview(false);
+
     } catch (error) {
-        console.error('Error sending message:', error);
+      console.error('Error sending message:', error);
     }
-};
-
+  };
 
   return (
     <div className="relative">
@@ -193,4 +213,5 @@ const Input = ({ selectedChat }) => {
     </div>
   );
 };
+
 export default Input;

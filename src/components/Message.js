@@ -11,10 +11,16 @@ const Message = ({ message, chatId, onDeleteMessage }) => {
 
   const isSentByCurrentUser = message.from === auth.currentUser?.displayName;
 
+  // Function to format the timestamp to show hours and minutes with AM/PM
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return '';
     const date = timestamp.toDate();
-    return date.toLocaleTimeString();
+    let hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12; // Convert to 12-hour format
+    hours = hours ? hours : 12; // The hour '0' should be '12'
+    return `${hours}:${minutes} ${ampm}`;
   };
 
   // Handle image click to preview full size
