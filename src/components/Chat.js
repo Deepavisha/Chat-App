@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Message from './Message';
 import Input from './Input';
 import ChatNavBar from './ChatNavBar';
@@ -12,6 +12,7 @@ const Chat = ({ selectedChat }) => {
   const [loading, setLoading] = useState(true);
   const [showPhoto, setShowPhoto] = useState(false);
   const [showUserDetails, setShowUserDetails] = useState(false);
+  const messagesEndRef = useRef(null)
 
   useEffect(() => {
     if (!selectedChat) return;
@@ -39,6 +40,10 @@ const Chat = ({ selectedChat }) => {
 
     return () => unsubscribe();
   }, [selectedChat]);
+
+  useEffect(()=>{
+    messagesEndRef.current?.scrollIntoView();
+  },[messages]);
 
   const clearChat = async () => {
     try {
@@ -116,6 +121,7 @@ const Chat = ({ selectedChat }) => {
             ) : (
               <div className="text-gray-500 text-center mt-4">No messages yet</div>
             )}
+              <div ref={messagesEndRef}/>
           </div>
           <Input selectedChat={selectedChat} />
         </>
