@@ -102,7 +102,7 @@ const Register = () => {
               Sign Up
             </button>
           </div>
-          {err && <span>Something went Wrong</span>}
+          {err && <span className='text-white ml-24'>Something went Wrong</span>}
         </form>
         <div className="text-center">
           <h5 className="text-gray-400">Do have an Account? <Link to="/login" className="text-yellow-400 hover:text-yellow-500">Login</Link></h5>
