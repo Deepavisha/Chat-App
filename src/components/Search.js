@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
-import { db } from '../firebase';
+import React, { useState } from 'react'; // Ensure useState is imported
+// Import other dependencies as needed
 
-const Search = ({ onSearch }) => {
+const Search = ({ onSearch, contacts }) => {
   const [username, setUserName] = useState("");
   const [err, setError] = useState(false);
 
-  const handleSearch = async (input) => {
+  const handleSearch = (input) => {
     setUserName(input);
 
     if (input.trim() === "") {
@@ -15,41 +14,20 @@ const Search = ({ onSearch }) => {
       return;
     }
 
-    try {
-      const lowerCaseInput = input.toLowerCase(); // Convert input to lowercase
+    const lowerCaseInput = input.toLowerCase(); // Convert input to lowercase
 
-      const q = query(
-        collection(db, "users"),
-        orderBy("displayName") // Keep ordering by displayName
-      );
+    // Filter contacts based on displayName or email
+    const filteredUsers = contacts.filter((contact) =>
+      contact.displayName.toLowerCase().includes(lowerCaseInput) ||
+      contact.email.toLowerCase().includes(lowerCaseInput)
+    );
 
-      const querySnapshot = await getDocs(q);
-      const users = [];
-
-      if (!querySnapshot.empty) {
-        querySnapshot.forEach((doc) => {
-          const userData = doc.data();
-          // Check if the displayName starts with the lowercase input
-          if (userData.displayName.toLowerCase().startsWith(lowerCaseInput)) {
-            users.push({ id: doc.id, ...userData });
-          }
-        });
-
-        if (users.length > 0) {
-          onSearch(users); // Send matching users to parent
-          setError(false); // Reset error state
-        } else {
-          onSearch([]); // No matching users
-          setError(true); // Set error state
-        }
-      } else {
-        onSearch([]); // Reset to empty array if no results
-        setError(true);
-      }
-    } catch (error) {
-      console.error("Error searching users:", error);
-      onSearch([]); // Reset to empty array on error
-      setError(true);
+    if (filteredUsers.length > 0) {
+      onSearch(filteredUsers); // Send matching users to parent
+      setError(false); // Reset error state
+    } else {
+      onSearch([]); // No matching users
+      setError(true); // Set error state
     }
   };
 

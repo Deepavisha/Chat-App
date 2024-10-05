@@ -120,6 +120,14 @@ const Input = ({ selectedChat }) => {
     }
   };
 
+  // Handle key down event to send message on Enter key press
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // Prevent new line in the input
+      sendMessage(); // Call sendMessage when Enter is pressed
+    }
+  };
+
   return (
     <div className="relative">
       <div className="p-4 bg-gray-800 flex items-center">
@@ -148,6 +156,7 @@ const Input = ({ selectedChat }) => {
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Type a message..."
           className="w-full px-3 py-2 ml-3 rounded-md bg-gray-700 text-gray-300 placeholder-gray-500 focus:outline-none"
+          onKeyDown={handleKeyDown} // Attach the key down event handler
         />
 
         {/* Send message button */}

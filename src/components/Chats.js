@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, startAt, endAt } from 'firebase/firestore';
+import React, { useState } from 'react'; 
+import { collection, query, where, getDocs } from 'firebase/firestore'; 
 import { auth, db } from '../firebase';
 
 const Chats = ({ contacts = [], onSelectChat }) => {
-  const [showPopup, setShowPopup] = useState(false); // State to control popup visibility
-  const [searchTerm, setSearchTerm] = useState(''); // State to track search input
-  const [suggestedUsers, setSuggestedUsers] = useState([]); // State to track filtered users
-  const currentUserUid = auth.currentUser?.uid;
+  const [showPopup, setShowPopup] = useState(false); 
+  const [searchTerm, setSearchTerm] = useState(''); 
+  const [suggestedUsers, setSuggestedUsers] = useState([]); 
 
   // Function to format the last message time (12-hour format with AM/PM)
   const formatTime = (date) => {
@@ -19,7 +18,7 @@ const Chats = ({ contacts = [], onSelectChat }) => {
 
   // Handle selecting a chat
   const handleChatSelection = (contact) => {
-    onSelectChat(contact); // Trigger chat selection
+    onSelectChat(contact);
   };
 
   // Function to handle the button click for showing the search popup
@@ -30,23 +29,22 @@ const Chats = ({ contacts = [], onSelectChat }) => {
   // Function to close the search popup
   const handleClosePopup = () => {
     setShowPopup(false);
-    setSearchTerm(''); // Reset search term
-    setSuggestedUsers([]); // Clear suggestions
+    setSearchTerm('');
+    setSuggestedUsers([]);
   };
 
   // Function to fetch users based on search term from Firestore
   const fetchSuggestedUsers = async (searchValue) => {
     if (!searchValue) {
-      setSuggestedUsers([]); // If search is empty, clear suggestions
+      setSuggestedUsers([]);
       return;
     }
     try {
       const usersRef = collection(db, 'users');
-      // Create a query that searches for users with emails starting with the search value
       const searchQuery = query(
         usersRef,
         where('email', '>=', searchValue),
-        where('email', '<=', searchValue + '\uf8ff') // Special character to match prefixes
+        where('email', '<=', searchValue + '\uf8ff') 
       );
       const snapshot = await getDocs(searchQuery);
       const users = snapshot.docs.map(doc => ({
@@ -54,7 +52,13 @@ const Chats = ({ contacts = [], onSelectChat }) => {
         ...doc.data(),
       }));
 
-      setSuggestedUsers(users);
+      // Get the current user's email
+      const currentUserEmail = auth.currentUser?.email;
+
+      // Filter out the current user from the suggested users
+      const filteredUsers = users.filter(user => user.email !== currentUserEmail);
+
+      setSuggestedUsers(filteredUsers);
     } catch (error) {
       console.error("Error fetching users:", error);
     }
@@ -64,55 +68,56 @@ const Chats = ({ contacts = [], onSelectChat }) => {
   const handleSearchInput = (event) => {
     const value = event.target.value;
     setSearchTerm(value);
-    fetchSuggestedUsers(value); // Trigger search when typing
+    fetchSuggestedUsers(value);
   };
 
   // Function to handle selecting a user from the search results
   const handleSelectUser = (user) => {
-    onSelectChat(user); // Trigger chat selection with the user
-    setShowPopup(false); // Close the popup after selecting a user
-    setSearchTerm(''); // Reset search term
-    setSuggestedUsers([]); // Clear suggestions
+    onSelectChat(user);
+    setShowPopup(false);
+    setSearchTerm('');
+    setSuggestedUsers([]);
   };
 
   return (
-    <div className="relative overflow-y-auto h-full">
-      {contacts.length > 0 ? (
-        contacts.map((contact, index) => (
-          <div
-            key={index}
-            className="flex items-center p-4 border-b border-gray-700 hover:bg-gray-700 ml-2 cursor-pointer"
-            onClick={() => handleChatSelection(contact)} // Fixing the handleChatSelection call
-          >
-            <img
-              src={contact.photoURL || '/default-profile-pic.png'}
-              alt={`${contact.displayName} Profile`}
-              className="w-10 h-10 rounded-full mr-4 object-cover"
-            />
-            <div>
-              <h2 className="text-yellow-500 font-bold">{contact.displayName}</h2>
-              <p className="text-gray-300">{contact.lastMessage || 'No messages yet'}</p>
+    <div className="relative h-full">
+      {/* Scrollable Chats List */}
+      <div className="overflow-y-auto h-full">
+        {contacts.length > 0 ? (
+          contacts.map((contact, index) => (
+            <div
+              key={index}
+              className="flex items-center p-4 border-b border-gray-700 hover:bg-gray-700 ml-2 cursor-pointer"
+              onClick={() => handleChatSelection(contact)} 
+            >
+              <img
+                src={contact.photoURL || '/default-profile-pic.png'}
+                alt={`${contact.displayName} Profile`}
+                className="w-10 h-10 rounded-full mr-4 object-cover"
+              />
+              <div>
+                <h2 className="text-yellow-500 font-bold">{contact.displayName}</h2>
+                <p className="text-gray-300">{contact.lastMessage || 'No messages yet'}</p>
+              </div>
+              <div className="ml-auto flex items-center space-x-2">
+                {contact.streak > 0 && (
+                  <>
+                    <span className="text-gray-300 text-sm">{contact.streak}</span>
+                    <img src="star.png" className="h-4 w-4" alt="Star Icon" />
+                  </>
+                )}
+                <span className="text-gray-400 text-sm">
+                  {contact.lastMessageTime ? formatTime(new Date(contact.lastMessageTime)) : ''}
+                </span>
+              </div>
             </div>
-            <div className="ml-auto flex items-center space-x-2">
-              {/* Display the streak count and star icon */}
-              {contact.streak > 0 && (
-                <>
-                  <span className="text-gray-300 text-sm">{contact.streak}</span>
-                  <img src="star.png" className="h-4 w-4" alt="Star Icon" />
-                </>
-              )}
-              {/* Display last message time */}
-              <span className="text-gray-400 text-sm">
-                {contact.lastMessageTime ? formatTime(new Date(contact.lastMessageTime)) : ''}
-              </span>
-            </div>
-          </div>
-        ))
-      ) : (
-        <div className="text-gray-500">No chats available</div>
-      )}
+          ))
+        ) : (
+          <div className="text-gray-500">No chats available</div>
+        )}
+      </div>
 
-      {/* Floating Button at the bottom right */}
+      {/* Floating Button at the bottom right, outside the scrollable content */}
       <button
         onClick={handleAddClick}
         className="absolute bottom-6 right-6 bg-yellow-500 text-white rounded-full p-4 shadow-lg"
@@ -125,7 +130,6 @@ const Chats = ({ contacts = [], onSelectChat }) => {
         <div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center z-50">
           <div className="bg-gray-900 p-6 rounded-lg shadow-lg w-96">
             <h2 className="text-white text-xl mb-4">Search Users</h2>
-            {/* Search input */}
             <input
               type="text"
               value={searchTerm}
@@ -133,7 +137,6 @@ const Chats = ({ contacts = [], onSelectChat }) => {
               placeholder="Search for users by email..."
               className="w-full p-2 mb-4 text-black rounded"
             />
-            {/* Suggested Users */}
             {suggestedUsers.length > 0 && (
               <div className="max-h-48 overflow-y-auto bg-gray-700 rounded-lg">
                 {suggestedUsers.map((user) => (
@@ -147,7 +150,6 @@ const Chats = ({ contacts = [], onSelectChat }) => {
                 ))}
               </div>
             )}
-            {/* Search Button */}
             <button
               onClick={handleClosePopup}
               className="bg-red-500 text-white p-2 rounded w-full mt-4"
