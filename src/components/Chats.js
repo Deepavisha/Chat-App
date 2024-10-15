@@ -149,7 +149,7 @@ const Chats = ({ contacts = [], onSelectChat }) => {
               type="text"
               value={searchTerm}
               onChange={handleSearchInput}
-              placeholder="Search for users by email..."
+              placeholder="Search Users by Username"
               className="w-full p-2 mb-4 text-black rounded"
             />
             {suggestedUsers.length > 0 && (
@@ -160,7 +160,7 @@ const Chats = ({ contacts = [], onSelectChat }) => {
                     className="p-2 hover:bg-gray-600 cursor-pointer"
                     onClick={() => handleSelectUser(user)}
                   >
-                    <p className="text-yellow-500">{user.email}</p>
+                    <p className="text-yellow-500">{user.username}</p>
                   </div>
                 ))}
               </div>

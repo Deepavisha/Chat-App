@@ -13,15 +13,19 @@ const Profile = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [about, setAbout] = useState('');
+  const [username, setUsername] = useState('');
   const [showAboutPopup, setShowAboutPopup] = useState(false); // State to show/hide the popup
   const [showNamePopup, setShowNamePopup] = useState(false); // State to show/hide name popup
   const [showEmailPopup, setShowEmailPopup] = useState(false); // State to show/hide email popup
+  const [showUsernamePopup, setShowUsernamePopup] = useState(false);
   const [newAbout, setNewAbout] = useState('');
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  const [newUsername, setnewUsername] = useState('');
   const [isAboutHovered, setIsAboutHovered] = useState(false); // State to handle hover on about section
   const [isNameHovered, setIsNameHovered] = useState(false); // State to handle hover on name section
   const [isEmailHovered, setIsEmailHovered] = useState(false); // State to handle hover on email section
+  const [isUsernameHovered, setIsUsernameHovered] = useState(false);
 
   // Navigate back to the chat (home) page
   const goBack = () => navigate('/');
@@ -41,6 +45,7 @@ const Profile = () => {
         setName(docSnap.data().name || currentUser.displayName || 'User Name');
         setEmail(docSnap.data().email || currentUser.email || 'user@example.com');
         setAbout(docSnap.data().about || "Hey Guys, I am using Chat App!");
+        setUsername(docSnap.data().username || "@username");
       } else {
         console.log('No such document!');
       }
@@ -55,6 +60,10 @@ const Profile = () => {
     setShowAboutPopup(true);
   };
 
+  const openUsernamePopup =()=>{
+    setnewUsername(username);
+    setShowUsernamePopup(true);
+  }
   // Open the popup for editing "Name"
   const openNamePopup = () => {
     setNewName(name); // Pre-fill the input with current name
@@ -71,6 +80,7 @@ const Profile = () => {
   const closeAboutPopup = () => setShowAboutPopup(false);
   const closeNamePopup = () => setShowNamePopup(false);
   const closeEmailPopup = () => setShowEmailPopup(false);
+  const closeUsernamePopup = () => setShowUsernamePopup(false);
 
   // Function to update the "About" section in Firestore
   const updateAbout = async () => {
@@ -84,6 +94,24 @@ const Profile = () => {
       await setDoc(userDocRef, { about: newAbout }, { merge: true }); // Update the about field
       setAbout(newAbout); // Update the state to reflect the new "About" text
       closeAboutPopup(); // Close the popup
+    } catch (error) {
+      console.error('Error updating about:', error);
+      alert('Failed to update about. Please try again.');
+    }
+  };
+
+  //Function to Update Username
+  const updateuserName = async () => {
+    if (newUsername.trim() === '') {
+      alert('Please enter a valid userName');
+      return;
+    }
+    
+    try {
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      await setDoc(userDocRef, { username: newUsername }, { merge: true }); // Update the username field
+      setUsername(newUsername);// Update the state to reflect the new "Username" text
+      closeUsernamePopup(); // Close the popup
     } catch (error) {
       console.error('Error updating about:', error);
       alert('Failed to update about. Please try again.');
@@ -159,6 +187,20 @@ const Profile = () => {
               <PencilIcon
                 className="ml-2 w-6 h-6 text-yellow-500 cursor-pointer"
                 onClick={openNamePopup} // Open the popup to edit name
+              />
+            )}
+          </div>
+
+          {/*Username Section */}
+          <div className="flex items-center mb-4"
+               onMouseEnter={() => setIsUsernameHovered(true)} 
+               onMouseLeave={() => setIsUsernameHovered(false)} // Set hover state
+          >
+            <h2 className="text-xl font-bold">Username: {username}</h2>
+            {isUsernameHovered && ( // Display Pencil icon only when hovered
+              <PencilIcon
+                className="ml-2 w-6 h-6 text-yellow-500 cursor-pointer"
+                onClick={openUsernamePopup} // Open the popup to edit name
               />
             )}
           </div>
@@ -246,6 +288,35 @@ const Profile = () => {
               <button
                 className="bg-yellow-500 text-white px-4 py-2 rounded"
                 onClick={updateName} // Update the name information
+              >
+                Update
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup for editing the Username section */}
+      {showUsernamePopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-900 p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-xl text-white mb-4">Edit Username</h2>
+            <input
+              className="w-full p-2 mb-4 text-black rounded"
+              value={newUsername}
+              onChange={(e) => setnewUsername(e.target.value)}
+              placeholder="Enter your new Username..."
+            />
+            <div className="flex justify-end space-x-4">
+              <button
+                className="bg-red-500 text-white px-4 py-2 rounded"
+                onClick={closeUsernamePopup}
+              >
+                Cancel
+              </button>
+              <button
+                className="bg-yellow-500 text-white px-4 py-2 rounded"
+                onClick={updateuserName} // Update the username information
               >
                 Update
               </button>
