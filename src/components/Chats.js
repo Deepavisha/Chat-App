@@ -108,9 +108,13 @@ const Chats = ({ contacts = [], onSelectChat }) => {
                 alt={`${contact.displayName} Profile`}
                 className="w-10 h-10 rounded-full mr-4 object-cover"
               />
-              <div>
+              <div className="flex-1">
                 <h2 className="text-yellow-500 font-bold">{contact.displayName}</h2>
-                <p className="text-gray-300">
+                <p
+                  className="text-gray-300 overflow-hidden whitespace-nowrap text-ellipsis"
+                  style={{ maxWidth: '200px' }} // Adjust the maxWidth as needed
+                  title={contact.lastMessage ? decryptMessage(contact.lastMessage) : 'No messages yet'}
+                >
                   {contact.lastMessage ? decryptMessage(contact.lastMessage) : 'No messages yet'}
                 </p>
               </div>
@@ -128,7 +132,7 @@ const Chats = ({ contacts = [], onSelectChat }) => {
             </div>
           ))
         ) : (
-          <div className="text-gray-500">No chats available</div>
+          <div className="text-gray-500 text-center mt-40">No chats available</div>
         )}
       </div>
 
