@@ -3,6 +3,9 @@ import { PaperAirplaneIcon, PaperClipIcon } from '@heroicons/react/24/outline';
 import { collection, addDoc, serverTimestamp, updateDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, auth, storage } from '../firebase';
+import CryptoJS from 'crypto-js'; // Importing crypto-js for encryption
+
+const secretKey = 'your-secret-key'; // Use a secure key for encryption
 
 const Input = ({ selectedChat }) => {
   const [message, setMessage] = useState('');
@@ -10,6 +13,11 @@ const Input = ({ selectedChat }) => {
   const [fileType, setFileType] = useState('');
   const [caption, setCaption] = useState('');
   const [showPreview, setShowPreview] = useState(false);
+
+  // Function to encrypt the message
+  const encryptMessage = (message) => {
+    return CryptoJS.AES.encrypt(message, secretKey).toString();
+  };
 
   // Handle file input change
   const handleFileChange = (e) => {
@@ -53,9 +61,12 @@ const Input = ({ selectedChat }) => {
         ? caption || ''
         : message || fileName;
 
+      // Encrypt the content before sending
+      const encryptedContent = encryptMessage(content);
+
       // Create a new message
       const messageDoc = await addDoc(messagesRef, {
-        content,
+        content: encryptedContent,
         from: user.displayName || 'Anonymous',
         time: serverTimestamp(),
         profilePic: user.photoURL,
@@ -78,29 +89,24 @@ const Input = ({ selectedChat }) => {
         }
       });
 
-      // Streak Logic
+      // Streak Logic (unchanged)
       const currentTime = new Date();
       const chatData = chatSnapshot.data();
       const lastInteraction = chatData?.lastInteraction ? new Date(chatData.lastInteraction) : null;
 
-      // If there's no last interaction, start the streak
       if (!lastInteraction) {
         await updateDoc(chatRef, {
           streak: 1,
           lastInteraction: currentTime.toISOString(),
         });
       } else {
-        // Calculate the time difference in hours
         const timeDiffInHours = (currentTime - lastInteraction) / (1000 * 60 * 60);
-
         if (timeDiffInHours < 24) {
-          // Both users interacted within 24 hours, increment streak
           await updateDoc(chatRef, {
             streak: chatData.streak + 1,
             lastInteraction: currentTime.toISOString(),
           });
         } else {
-          // Missed interaction, reset streak
           await updateDoc(chatRef, {
             streak: 0,
             lastInteraction: currentTime.toISOString(),

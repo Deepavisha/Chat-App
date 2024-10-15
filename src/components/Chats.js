@@ -1,11 +1,24 @@
-import React, { useState } from 'react'; 
-import { collection, query, where, getDocs } from 'firebase/firestore'; 
+import React, { useState } from 'react';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../firebase';
+import CryptoJS from 'crypto-js';
 
 const Chats = ({ contacts = [], onSelectChat }) => {
-  const [showPopup, setShowPopup] = useState(false); 
-  const [searchTerm, setSearchTerm] = useState(''); 
-  const [suggestedUsers, setSuggestedUsers] = useState([]); 
+  const [showPopup, setShowPopup] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [suggestedUsers, setSuggestedUsers] = useState([]);
+
+  // Function to decrypt the message content
+  const decryptMessage = (encryptedMessage) => {
+    const secretKey = 'your-secret-key'; // Make sure to use the same key used for encryption
+    try {
+      const bytes = CryptoJS.AES.decrypt(encryptedMessage, secretKey);
+      return bytes.toString(CryptoJS.enc.Utf8);
+    } catch (error) {
+      console.error('Error decrypting message:', error);
+      return 'Decryption error';
+    }
+  };
 
   // Function to format the last message time (12-hour format with AM/PM)
   const formatTime = (date) => {
@@ -44,7 +57,7 @@ const Chats = ({ contacts = [], onSelectChat }) => {
       const searchQuery = query(
         usersRef,
         where('email', '>=', searchValue),
-        where('email', '<=', searchValue + '\uf8ff') 
+        where('email', '<=', searchValue + '\uf8ff')
       );
       const snapshot = await getDocs(searchQuery);
       const users = snapshot.docs.map(doc => ({
@@ -88,7 +101,7 @@ const Chats = ({ contacts = [], onSelectChat }) => {
             <div
               key={index}
               className="flex items-center p-4 border-b border-gray-700 hover:bg-gray-700 ml-2 cursor-pointer"
-              onClick={() => handleChatSelection(contact)} 
+              onClick={() => handleChatSelection(contact)}
             >
               <img
                 src={contact.photoURL || '/default-profile-pic.png'}
@@ -97,7 +110,9 @@ const Chats = ({ contacts = [], onSelectChat }) => {
               />
               <div>
                 <h2 className="text-yellow-500 font-bold">{contact.displayName}</h2>
-                <p className="text-gray-300">{contact.lastMessage || 'No messages yet'}</p>
+                <p className="text-gray-300">
+                  {contact.lastMessage ? decryptMessage(contact.lastMessage) : 'No messages yet'}
+                </p>
               </div>
               <div className="ml-auto flex items-center space-x-2">
                 {contact.streak > 0 && (

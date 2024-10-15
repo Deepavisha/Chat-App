@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { auth, db } from '../firebase';
 import { ArrowDownTrayIcon, EllipsisHorizontalIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { deleteDoc, doc } from 'firebase/firestore';
+import CryptoJS from 'crypto-js'; // Importing crypto-js for decryption
+
+const secretKey = 'your-secret-key'; // The same key used for encryption
 
 const Message = ({ message, chatId, onDeleteMessage }) => {
   const [isImageOpen, setIsImageOpen] = useState(false);
@@ -11,7 +14,19 @@ const Message = ({ message, chatId, onDeleteMessage }) => {
 
   const isSentByCurrentUser = message.from === auth.currentUser?.displayName;
 
-  // Function to format the timestamp to show hours and minutes with AM/PM
+  // Function to decrypt the message
+  const decryptMessage = (encryptedMessage) => {
+    try {
+      const bytes = CryptoJS.AES.decrypt(encryptedMessage, secretKey);
+      return bytes.toString(CryptoJS.enc.Utf8);
+    } catch (error) {
+      console.error('Error decrypting message:', error);
+      return 'Decryption error';
+    }
+  };
+
+  const decryptedContent = decryptMessage(message.content); // Decrypt the message content
+
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return '';
     const date = timestamp.toDate();
@@ -114,7 +129,7 @@ const Message = ({ message, chatId, onDeleteMessage }) => {
 
           {/* Text Message */}
           {!message.fileUrl && message.content && (
-            <p className="whitespace-pre-wrap">{message.content}</p>
+            <p className="whitespace-pre-wrap">{decryptedContent}</p>
           )}
 
           {/* Timestamp */}
