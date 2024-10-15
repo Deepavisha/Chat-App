@@ -1,23 +1,130 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { PencilIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'; // Import necessary icons
+import { PencilIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { db } from '../firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 const Profile = () => {
   const { currentUser } = useContext(AuthContext); // Get the current user from AuthContext
   const navigate = useNavigate(); // Use for navigation
 
-  // State to handle the "About" section
-  const [about, setAbout] = useState("Hey Guys,I am using Chat App!");
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [isEditingEmail, setIsEditingEmail] = useState(false);
-
-  // Toggle editing for name and email
-  const toggleEditingName = () => setIsEditingName(!isEditingName);
-  const toggleEditingEmail = () => setIsEditingEmail(!isEditingEmail);
+  // State to handle user details
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [about, setAbout] = useState('');
+  const [showAboutPopup, setShowAboutPopup] = useState(false); // State to show/hide the popup
+  const [showNamePopup, setShowNamePopup] = useState(false); // State to show/hide name popup
+  const [showEmailPopup, setShowEmailPopup] = useState(false); // State to show/hide email popup
+  const [newAbout, setNewAbout] = useState('');
+  const [newName, setNewName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [isAboutHovered, setIsAboutHovered] = useState(false); // State to handle hover on about section
+  const [isNameHovered, setIsNameHovered] = useState(false); // State to handle hover on name section
+  const [isEmailHovered, setIsEmailHovered] = useState(false); // State to handle hover on email section
 
   // Navigate back to the chat (home) page
   const goBack = () => navigate('/');
+
+  // Fetch user details from Firestore when component mounts
+  useEffect(() => {
+    const fetchUserData = async () => {
+      // Check if currentUser is defined
+      if (!currentUser || !currentUser.uid) {
+        console.error('Current user is not defined or does not have a uid');
+        return;
+      }
+
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      const docSnap = await getDoc(userDocRef);
+      if (docSnap.exists()) {
+        setName(docSnap.data().name || currentUser.displayName || 'User Name');
+        setEmail(docSnap.data().email || currentUser.email || 'user@example.com');
+        setAbout(docSnap.data().about || "Hey Guys, I am using Chat App!");
+      } else {
+        console.log('No such document!');
+      }
+    };
+
+    fetchUserData();
+  }, [currentUser]);
+
+  // Open the popup for editing "About"
+  const openAboutPopup = () => {
+    setNewAbout(about); // Pre-fill the input with current about
+    setShowAboutPopup(true);
+  };
+
+  // Open the popup for editing "Name"
+  const openNamePopup = () => {
+    setNewName(name); // Pre-fill the input with current name
+    setShowNamePopup(true);
+  };
+
+  // Open the popup for editing "Email"
+  const openEmailPopup = () => {
+    setNewEmail(email); // Pre-fill the input with current email
+    setShowEmailPopup(true);
+  };
+
+  // Close the popup without saving
+  const closeAboutPopup = () => setShowAboutPopup(false);
+  const closeNamePopup = () => setShowNamePopup(false);
+  const closeEmailPopup = () => setShowEmailPopup(false);
+
+  // Function to update the "About" section in Firestore
+  const updateAbout = async () => {
+    if (newAbout.trim() === '') {
+      alert('Please enter a valid about text.');
+      return;
+    }
+    
+    try {
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      await setDoc(userDocRef, { about: newAbout }, { merge: true }); // Update the about field
+      setAbout(newAbout); // Update the state to reflect the new "About" text
+      closeAboutPopup(); // Close the popup
+    } catch (error) {
+      console.error('Error updating about:', error);
+      alert('Failed to update about. Please try again.');
+    }
+  };
+
+  // Function to update the "Name" section in Firestore
+  const updateName = async () => {
+    if (newName.trim() === '') {
+      alert('Please enter a valid name.');
+      return;
+    }
+
+    try {
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      await setDoc(userDocRef, { name: newName }, { merge: true }); // Update the name field
+      setName(newName); // Update the state to reflect the new "Name" text
+      closeNamePopup(); // Close the popup
+    } catch (error) {
+      console.error('Error updating name:', error);
+      alert('Failed to update name. Please try again.');
+    }
+  };
+
+  // Function to update the "Email" section in Firestore
+  const updateEmail = async () => {
+    if (newEmail.trim() === '') {
+      alert('Please enter a valid email.');
+      return;
+    }
+
+    try {
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      await setDoc(userDocRef, { email: newEmail }, { merge: true }); // Update the email field
+      setEmail(newEmail); // Update the state to reflect the new "Email" text
+      closeEmailPopup(); // Close the popup
+    } catch (error) {
+      console.error('Error updating email:', error);
+      alert('Failed to update email. Please try again.');
+    }
+  };
 
   return (
     <div className="p-4 bg-gray-800 text-gray-200 h-screen relative">
@@ -43,42 +150,138 @@ const Profile = () => {
         {/* Right Side - User Details */}
         <div className="md:w-2/4 pl-8 mt-32 ml-10">
           {/* Name Section */}
-          <div
-            className="flex items-center mb-4 group"
-            onMouseEnter={toggleEditingName}
-            onMouseLeave={toggleEditingName}
+          <div className="flex items-center mb-4"
+               onMouseEnter={() => setIsNameHovered(true)} 
+               onMouseLeave={() => setIsNameHovered(false)} // Set hover state
           >
-            <h2 className="text-xl font-bold">Name  : {currentUser?.displayName || 'User Name'}</h2>
-            {isEditingName && (
+            <h2 className="text-xl font-bold">Name: {name}</h2>
+            {isNameHovered && ( // Display Pencil icon only when hovered
               <PencilIcon
                 className="ml-2 w-6 h-6 text-yellow-500 cursor-pointer"
-                onClick={() => alert('Edit Name functionality here')}
+                onClick={openNamePopup} // Open the popup to edit name
               />
             )}
           </div>
 
           {/* Email Section */}
-          <div
-            className="flex items-center mb-4 group"
-            onMouseEnter={toggleEditingEmail}
-            onMouseLeave={toggleEditingEmail}
+          <div className="flex items-center mb-4"
+               onMouseEnter={() => setIsEmailHovered(true)} 
+               onMouseLeave={() => setIsEmailHovered(false)} // Set hover state
           >
-            <p className="text-xl"><strong>Email  :</strong> {currentUser?.email}</p>
-            {isEditingEmail && (
+            <p className="text-xl"><strong>Email:</strong> {email}</p>
+            {isEmailHovered && ( // Display Pencil icon only when hovered
               <PencilIcon
                 className="ml-2 w-6 h-6 text-yellow-500 cursor-pointer"
-                onClick={() => alert('Edit Email functionality here')}
+                onClick={openEmailPopup} // Open the popup to edit email
               />
             )}
           </div>
 
           {/* About Section */}
-          <div className="mt-4">
-
-            <h3 className="text-xl font-semibold mb-2 text-gray-300">About  :  <span className='text-lg text-gray-100'>{about}</span></h3>
+          <div className="mt-4 flex items-center"
+               onMouseEnter={() => setIsAboutHovered(true)} 
+               onMouseLeave={() => setIsAboutHovered(false)} // Set hover state
+          >
+            <h3 className="text-xl font-semibold mb-2 text-gray-300">
+              About: <span className='text-lg text-gray-100'>{about}</span>
+            </h3>
+            {isAboutHovered && ( // Display Pencil icon only when hovered
+              <PencilIcon
+                className="ml-2 w-6 h-6 text-yellow-500 cursor-pointer"
+                onClick={openAboutPopup} // Open the popup to edit about
+              />
+            )}
           </div>
         </div>
       </div>
+
+      {/* Popup for editing the About section */}
+      {showAboutPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-900 p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-xl text-white mb-4">Edit About</h2>
+            <textarea
+              className="w-full p-2 mb-4 text-black rounded"
+              value={newAbout}
+              onChange={(e) => setNewAbout(e.target.value)}
+              placeholder="Enter your new about information..."
+              rows={4}
+            ></textarea>
+            <div className="flex justify-end space-x-4">
+              <button
+                className="bg-red-500 text-white px-4 py-2 rounded"
+                onClick={closeAboutPopup}
+              >
+                Cancel
+              </button>
+              <button
+                className="bg-yellow-500 text-white px-4 py-2 rounded"
+                onClick={updateAbout} // Update the about information
+              >
+                Update
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup for editing the Name section */}
+      {showNamePopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-900 p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-xl text-white mb-4">Edit Name</h2>
+            <input
+              className="w-full p-2 mb-4 text-black rounded"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="Enter your new name..."
+            />
+            <div className="flex justify-end space-x-4">
+              <button
+                className="bg-red-500 text-white px-4 py-2 rounded"
+                onClick={closeNamePopup}
+              >
+                Cancel
+              </button>
+              <button
+                className="bg-yellow-500 text-white px-4 py-2 rounded"
+                onClick={updateName} // Update the name information
+              >
+                Update
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup for editing the Email section */}
+      {showEmailPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-900 p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-xl text-white mb-4">Edit Email</h2>
+            <input
+              className="w-full p-2 mb-4 text-black rounded"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              placeholder="Enter your new email..."
+            />
+            <div className="flex justify-end space-x-4">
+              <button
+                className="bg-red-500 text-white px-4 py-2 rounded"
+                onClick={closeEmailPopup}
+              >
+                Cancel
+              </button>
+              <button
+                className="bg-yellow-500 text-white px-4 py-2 rounded"
+                onClick={updateEmail} // Update the email information
+              >
+                Update
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
