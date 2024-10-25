@@ -46,7 +46,11 @@ const Chat = ({ selectedChat }) => {
     getDoc(userRef).then((doc) => {
       if (doc.exists()) {
         const userData = doc.data();
-        setChatUser({ ...selectedChat, email: userData.email }); // Set chat user with email
+        setChatUser({ 
+          ...selectedChat, 
+          email: userData.email ,
+          about: userData.about,       
+          username: userData.username,}); // Set chat user with email
       }
     });
 
