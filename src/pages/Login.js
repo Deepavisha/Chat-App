@@ -27,7 +27,7 @@ const Login = () => {
     <div className="min-h-screen bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="text-center text-3xl font-extrabold text-yellow-300">Chat App</h2>
+          <h2 className="text-center text-3xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#feab01] to-[#e23c00]">Chat App</h2>
         </div>
         <form className="mt-8 space-y-6 bg-gray-800 p-8 rounded-lg shadow-lg" onSubmit={handleSubmit}>
         <h5 className="font-bold text-center text-xl text-gray-300">Login</h5>

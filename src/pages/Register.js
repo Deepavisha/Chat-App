@@ -95,7 +95,7 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center py-2 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="text-center text-4xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#feab01] to-[#e23c00]">Chat App</h2>
@@ -136,7 +136,7 @@ const Register = () => {
           {err && <span className='text-white ml-24'>Something went wrong</span>}
         </form>
         <div className="text-center">
-          <h5 className="text-gray-400">Do you have an Account? <Link to="/login" className="text-yellow-400 hover:text-yellow-500">Login</Link></h5>
+          <h5 className="text-gray-400 relative bottom-5">Do you have an Account? <Link to="/login" className="text-yellow-400 hover:text-yellow-500">Login</Link></h5>
         </div>
       </div>
     </div>

@@ -73,6 +73,7 @@ const Input = ({ selectedChat }) => {
         fileUrl: fileUrl || null,
         fileType: fileType || null,
         fileName: fileName || null,
+        caption: caption || null,
       });
 
       // Update the message with its own ID

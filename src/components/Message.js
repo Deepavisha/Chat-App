@@ -98,13 +98,17 @@ const Message = ({ message, chatId, onDeleteMessage }) => {
           }`}
         >
           {message.fileUrl && message.fileType === 'image' ? (
-            <div onClick={() => setIsImageModalOpen(true)} className="cursor-pointer">
-              <img
-                src={message.fileUrl}
-                alt="Sent"
-                className="w-full h-auto rounded-md"
-              />
-            </div>
+          <div onClick={() => setIsImageModalOpen(true)} className="cursor-pointer">
+            <img
+              src={message.fileUrl}
+              alt="Sent"
+              className="w-full h-auto rounded-md"
+            />
+            {message.caption && ( // Check if caption exists and display it
+              <p className="text-gray-200 mt-1">{message.caption}</p>
+            )}
+          </div>
+
           ) : message.fileUrl && message.fileType === 'document' ? (
             <div className="flex items-start">
               <a
