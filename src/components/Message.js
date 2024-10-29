@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { auth, db } from '../firebase';
-import { EllipsisHorizontalIcon, TrashIcon} from '@heroicons/react/24/outline';
+import { EllipsisHorizontalIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { deleteDoc, doc } from 'firebase/firestore';
 import CryptoJS from 'crypto-js';
 import { FaDownload } from "react-icons/fa";
@@ -98,17 +98,16 @@ const Message = ({ message, chatId, onDeleteMessage }) => {
           }`}
         >
           {message.fileUrl && message.fileType === 'image' ? (
-          <div onClick={() => setIsImageModalOpen(true)} className="cursor-pointer">
-            <img
-              src={message.fileUrl}
-              alt="Sent"
-              className="w-full h-auto rounded-md"
-            />
-            {message.caption && ( // Check if caption exists and display it
-              <p className="text-gray-200 mt-1">{message.caption}</p>
-            )}
-          </div>
-
+            <div onClick={() => setIsImageModalOpen(true)} className="cursor-pointer">
+              <img
+                src={message.fileUrl}
+                alt="Sent"
+                className="w-full h-auto rounded-md"
+              />
+              {message.caption && (
+                <p className="text-gray-200 mt-1">{message.caption}</p>
+              )}
+            </div>
           ) : message.fileUrl && message.fileType === 'document' ? (
             <div className="flex items-start">
               <a
@@ -121,7 +120,7 @@ const Message = ({ message, chatId, onDeleteMessage }) => {
               </a>
               <button
                 onClick={() => window.open(message.fileUrl, '_blank')}
-                className=" bg-yellow-500 text-white px-3 py-1  "
+                className="bg-yellow-500 text-white px-3 py-1"
                 download={message.fileName}
               >
                 <FaDownload />
@@ -130,7 +129,7 @@ const Message = ({ message, chatId, onDeleteMessage }) => {
           ) : (
             <div
               ref={messageRef}
-              className={`whitespace-pre-wrap text-gray-200 text-sm ${isFullMessageVisible ? '' : 'max-h-24 overflow-hidden'}`}
+              className={`whitespace-pre-wrap ${isSentByCurrentUser ? 'text-black' : 'text-gray-200'} text-sm ${isFullMessageVisible ? '' : 'max-h-24 overflow-hidden'}`}
             >
               {decryptedContent}
             </div>
